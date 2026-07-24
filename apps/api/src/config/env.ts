@@ -2,12 +2,33 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Collect every missing variable before failing, so a deploy log shows the
+// whole list at once instead of one-per-restart.
+const missing: string[] = [];
+
 function required(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;
   if (value === undefined) {
-    throw new Error(`Missing required env var: ${name}`);
+    missing.push(name);
+    return "";
   }
   return value;
+}
+
+function assertNoMissing(): void {
+  if (missing.length === 0) return;
+  console.error(
+    [
+      "",
+      "═══ Startup aborted: required environment variables are not set ═══",
+      ...missing.map((n) => `  • ${n}`),
+      "",
+      "On Railway, set these under Service → Variables.",
+      "DATABASE_URL must reference the Postgres service, e.g. ${{Postgres.DATABASE_URL}}",
+      "",
+    ].join("\n")
+  );
+  throw new Error(`Missing required env vars: ${missing.join(", ")}`);
 }
 
 export const env = {
@@ -39,3 +60,5 @@ export const env = {
     deepseekApiKey: process.env.DEEPSEEK_API_KEY ?? "",
   },
 };
+
+assertNoMissing();
