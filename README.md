@@ -55,8 +55,19 @@ Both apps deploy to Vercel as separate projects:
   **pooled** connection string: serverless opens a connection per cold start and
   a direct string will exhaust the connection limit.
 
-Migrations run as part of the API build (`prisma migrate deploy` in
-`vercel.json`), so `DATABASE_URL` must be present in the build environment.
+### Migrations
+
+Migrations are **not** run during the build. Every preview deployment builds too,
+so a `migrate deploy` in the build step would let any PR preview migrate the
+production database. Run them once, manually, against the production URL:
+
+```bash
+cd apps/api
+DATABASE_URL="<production-connection-string>" npx prisma migrate deploy
+```
+
+Repeat that after adding any new migration. The build only runs `prisma generate`
+(via `npm run build`), which needs no database connection.
 
 ### Serverless caveat: uploaded files
 
