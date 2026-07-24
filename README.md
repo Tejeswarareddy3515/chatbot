@@ -47,10 +47,10 @@ Both apps deploy to Vercel as separate projects:
 
 - **Frontend** (`apps/web`) → Vercel. Set root directory to `apps/web` and
   `NEXT_PUBLIC_API_URL` to the API project's URL.
-- **Backend** (`apps/api`) → Vercel serverless. Set root directory to `apps/api`.
-  `api/index.ts` exports the Express app as a request handler and `vercel.json`
-  rewrites every path to it; `src/index.ts` (which calls `app.listen`) is only
-  used for local dev and container hosts.
+- **Backend** (`apps/api`) → Vercel, using its Node server support. Set root
+  directory to `apps/api`. Vercel detects `src/index.ts` as the entrypoint and
+  runs the Express app directly, so the same `app.listen` path serves local dev,
+  Vercel, and any container host — there is no separate serverless adapter.
 - **Postgres** → any managed provider (Vercel Postgres, Neon, Supabase). Use the
   **pooled** connection string: serverless opens a connection per cold start and
   a direct string will exhaust the connection limit.
@@ -69,12 +69,12 @@ DATABASE_URL="<production-connection-string>" npx prisma migrate deploy
 Repeat that after adding any new migration. The build only runs `prisma generate`
 (via `npm run build`), which needs no database connection.
 
-### Serverless caveat: uploaded files
+### Caveat: uploaded files
 
-On Vercel the bundle directory is read-only, so uploads go to `/tmp` and are not
-retained between invocations. The parser extracts text and persists it to the
-database in the same request, so document Q&A works — but keeping the original
-file requires object storage (S3/R2).
+On Vercel the bundle directory is read-only, so uploads go to `/tmp` (see
+`src/routes/file.routes.ts`) and are not durable. The parser extracts text and
+persists it to the database in the same request, so document Q&A works — but
+keeping the original file requires object storage (S3/R2).
 
 ## Known dependency risk
 
