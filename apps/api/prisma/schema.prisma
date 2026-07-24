@@ -1,5 +1,11 @@
 generator client {
   provider = "prisma-client-js"
+  // Generate inside apps/api. This repo is an npm workspace, so the default
+  // location is the hoisted root node_modules — outside the deploy root
+  // directory, which means the query engine binary is not bundled and the
+  // function crashes on import. Keep the client (and its engine) in-tree.
+  output        = "../generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
