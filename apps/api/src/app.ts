@@ -56,3 +56,12 @@ export function createApp() {
 
   return app;
 }
+
+// Vercel's Express preset resolves this module as the entrypoint (it looks for
+// app.* before index.*) and requires the default export to be a server. An
+// Express app is itself a (req, res) handler, so exporting the instance
+// satisfies that. src/index.ts imports this same instance and calls listen()
+// for local dev and container hosts, so only one app is ever constructed.
+const app = createApp();
+
+export default app;

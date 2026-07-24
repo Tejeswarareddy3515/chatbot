@@ -1,7 +1,5 @@
-import { createApp } from "./app";
+import app from "./app";
 import { env } from "./config/env";
-
-const app = createApp();
 
 // Bind 0.0.0.0, not the default loopback, so a container host's health check
 // can reach the process on its external interface.
