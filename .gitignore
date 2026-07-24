@@ -13,5 +13,7 @@ apps/api/uploads/*
 !apps/api/uploads/.gitkeep
 .turbo/
 
-# Claude Code local settings (may contain machine-specific data)
-.claude/settings.local.json
+# Claude Code local settings — machine-specific, and observed to contain
+# API tokens inside recorded command allowlists. Match in any directory,
+# since the settings folder name varies (.claude/, Claude/, <project>/).
+**/settings.local.json
