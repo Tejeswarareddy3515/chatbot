@@ -1,0 +1,17 @@
+node_modules/
+.next/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+coverage/
+apps/api/prisma/dev.db
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+.turbo/
+
+# Claude Code local settings (may contain machine-specific data)
+.claude/settings.local.json

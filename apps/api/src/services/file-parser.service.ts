@@ -1,0 +1,48 @@
+import fs from "fs/promises";
+import path from "path";
+
+const TEXT_MIME_TYPES = new Set(["text/plain", "text/csv", "application/json", "application/xml", "text/xml"]);
+
+/**
+ * Extracts plain text from an uploaded file so it can be fed into the AI as context.
+ * Fully implemented for txt/csv/json/pdf/docx/xlsx. Images, audio, video, and zip
+ * archives are stored but not parsed yet — see TODOs below.
+ */
+export async function extractText(filePath: string, mimeType: string): Promise<string | null> {
+  try {
+    if (TEXT_MIME_TYPES.has(mimeType)) {
+      return await fs.readFile(filePath, "utf-8");
+    }
+
+    if (mimeType === "application/pdf") {
+      const pdfParse = (await import("pdf-parse")).default;
+      const buffer = await fs.readFile(filePath);
+      const result = await pdfParse(buffer);
+      return result.text;
+    }
+
+    if (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      const mammoth = await import("mammoth");
+      const result = await mammoth.extractRawText({ path: filePath });
+      return result.value;
+    }
+
+    if (
+      mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      mimeType === "application/vnd.ms-excel"
+    ) {
+      const XLSX = await import("xlsx");
+      const workbook = XLSX.readFile(filePath);
+      return workbook.SheetNames.map((name) => XLSX.utils.sheet_to_csv(workbook.Sheets[name])).join("\n\n");
+    }
+
+    // TODO: PowerPoint (.pptx) text extraction — parse slide XML from the zip archive.
+    // TODO: Image OCR — integrate Tesseract.js or a cloud OCR API.
+    // TODO: Audio/video — transcribe via Whisper (OpenAI) before indexing.
+    // TODO: ZIP — enumerate + recursively extract supported entries.
+    return null;
+  } catch (err) {
+    console.error(`Failed to extract text from ${path.basename(filePath)}:`, err);
+    return null;
+  }
+}

@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  GITHUB
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum PlanTier {
+  FREE
+  PRO
+  TEAM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  name          String?
+  avatarUrl     String?
+  passwordHash  String?
+  provider      AuthProvider @default(LOCAL)
+  providerId    String?
+  role          Role         @default(USER)
+  customInstructions String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  chats         Chat[]
+  folders       Folder[]
+  files         File[]
+  apiKeys       ApiKey[]
+  settings      Setting?
+  subscription  Subscription?
+  logs          Log[]
+
+  @@index([email])
+}
+
+model Folder {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chats     Chat[]
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Chat {
+  id             String   @id @default(uuid())
+  title          String   @default("New Chat")
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId       String?
+  folder         Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  model          String   @default("gpt-4o-mini")
+  systemPrompt   String?
+  temperature    Float    @default(0.7)
+  topP           Float    @default(1.0)
+  maxTokens      Int      @default(2048)
+  isPinned       Boolean  @default(false)
+  isFavorite     Boolean  @default(false)
+  isShared       Boolean  @default(false)
+  shareId        String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  messages       Message[]
+  files          File[]
+
+  @@index([userId])
+  @@index([folderId])
+}
+
+model Message {
+  id         String      @id @default(uuid())
+  chatId     String
+  chat       Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  role       MessageRole
+  content    String
+  model      String?
+  tokenCount Int?
+  isPinned   Boolean     @default(false)
+  parentId   String?
+  createdAt  DateTime    @default(now())
+
+  @@index([chatId])
+}
+
+model File {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatId       String?
+  chat         Chat?    @relation(fields: [chatId], references: [id], onDelete: SetNull)
+  filename     String
+  mimeType     String
+  sizeBytes    Int
+  storagePath  String
+  extractedText String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([chatId])
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String
+  label     String?
+  keyHash   String
+  lastFour  String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Setting {
+  id                  String  @id @default(uuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme               String  @default("system")
+  defaultModel        String  @default("gpt-4o-mini")
+  voiceName            String  @default("alloy")
+  voiceSpeed          Float   @default(1.0)
+  voicePitch          Float   @default(1.0)
+  webSearchEnabled    Boolean @default(false)
+  updatedAt           DateTime @updatedAt
+}
+
+model Subscription {
+  id          String             @id @default(uuid())
+  userId      String             @unique
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier        PlanTier           @default(FREE)
+  status      SubscriptionStatus @default(ACTIVE)
+  renewsAt    DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model Log {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  metadata  Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+}
+
+model Analytics {
+  id            String   @id @default(uuid())
+  date          DateTime @unique @db.Date
+  totalUsers    Int      @default(0)
+  newUsers      Int      @default(0)
+  totalChats    Int      @default(0)
+  totalMessages Int      @default(0)
+  totalTokens   Int      @default(0)
+  modelUsage    Json?
+}
