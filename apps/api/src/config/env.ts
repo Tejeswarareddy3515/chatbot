@@ -31,10 +31,19 @@ function assertNoMissing(): void {
   throw new Error(`Missing required env vars: ${missing.join(", ")}`);
 }
 
+// CLIENT_URL accepts a comma-separated list so one deployment can serve the
+// apex domain, the www subdomain, and the *.vercel.app URL. The first entry is
+// the canonical one used for OAuth redirects; all of them are allowed by CORS.
+const clientUrls = required("CLIENT_URL", "http://localhost:3000")
+  .split(",")
+  .map((u) => u.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: Number(process.env.PORT ?? 4000),
-  clientUrl: required("CLIENT_URL", "http://localhost:3000"),
+  clientUrl: clientUrls[0] ?? "http://localhost:3000",
+  allowedOrigins: clientUrls,
 
   databaseUrl: required("DATABASE_URL"),
 

@@ -29,7 +29,14 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.clientUrl,
+      // Allow every origin listed in CLIENT_URL. Requests with no Origin header
+      // (curl, server-to-server, health checks) are allowed through; a browser
+      // origin that is not on the list simply gets no allow-origin header,
+      // which the browser blocks — rather than a 500 from a thrown error.
+      origin(origin, callback) {
+        if (!origin || env.allowedOrigins.includes(origin)) return callback(null, true);
+        callback(null, false);
+      },
       credentials: true,
     })
   );
