@@ -23,8 +23,8 @@ function assertNoMissing(): void {
       "═══ Startup aborted: required environment variables are not set ═══",
       ...missing.map((n) => `  • ${n}`),
       "",
-      "On Railway, set these under Service → Variables.",
-      "DATABASE_URL must reference the Postgres service, e.g. ${{Postgres.DATABASE_URL}}",
+      "On Vercel, set these under Project → Settings → Environment Variables.",
+      "DATABASE_URL should be a pooled Postgres connection string.",
       "",
     ].join("\n")
   );

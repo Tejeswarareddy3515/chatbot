@@ -21,7 +21,7 @@ import modelRoutes from "./routes/model.routes";
 export function createApp() {
   const app = express();
 
-  // Behind a platform proxy (Vercel, Railway), the client IP arrives in
+  // Behind a platform proxy (Vercel and most container hosts), the client IP arrives in
   // X-Forwarded-For. Without this, express-rate-limit sees every request as
   // coming from the proxy and rate-limits all users as one.
   app.set("trust proxy", 1);

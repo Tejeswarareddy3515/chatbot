@@ -3,8 +3,8 @@ import { env } from "./config/env";
 
 const app = createApp();
 
-// Bind 0.0.0.0, not the default loopback: platform health checks (Railway,
-// Render, Fly) reach the container on its external interface.
+// Bind 0.0.0.0, not the default loopback, so a container host's health check
+// can reach the process on its external interface.
 const server = app.listen(env.port, "0.0.0.0", () => {
   console.log(`API listening on 0.0.0.0:${env.port} (env: ${env.nodeEnv})`);
   console.log(`Health check: GET /health`);

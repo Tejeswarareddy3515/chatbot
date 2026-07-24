@@ -43,8 +43,27 @@ Web: http://localhost:3000  ·  API: http://localhost:4000
 
 ## Deployment target
 
-- Frontend → Vercel
-- Backend + Postgres → Railway
+Both apps deploy to Vercel as separate projects:
+
+- **Frontend** (`apps/web`) → Vercel. Set root directory to `apps/web` and
+  `NEXT_PUBLIC_API_URL` to the API project's URL.
+- **Backend** (`apps/api`) → Vercel serverless. Set root directory to `apps/api`.
+  `api/index.ts` exports the Express app as a request handler and `vercel.json`
+  rewrites every path to it; `src/index.ts` (which calls `app.listen`) is only
+  used for local dev and container hosts.
+- **Postgres** → any managed provider (Vercel Postgres, Neon, Supabase). Use the
+  **pooled** connection string: serverless opens a connection per cold start and
+  a direct string will exhaust the connection limit.
+
+Migrations run as part of the API build (`prisma migrate deploy` in
+`vercel.json`), so `DATABASE_URL` must be present in the build environment.
+
+### Serverless caveat: uploaded files
+
+On Vercel the bundle directory is read-only, so uploads go to `/tmp` and are not
+retained between invocations. The parser extracts text and persists it to the
+database in the same request, so document Q&A works — but keeping the original
+file requires object storage (S3/R2).
 
 ## Known dependency risk
 
